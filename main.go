@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -128,6 +129,9 @@ func main() {
 				Value(&adapter),
 		),
 	)
+
+	accessibleMode := os.Getenv("ACCESSIBLE") != ""
+	form.WithAccessible(accessibleMode)
 
 	err := form.Run()
 	if err != nil {
