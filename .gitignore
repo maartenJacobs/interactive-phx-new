@@ -1,0 +1,9 @@
+# Test projects.
+/foobar
+
+# Elixir files.
+.mix_tasks
+mix.lock
+
+# Executables.
+interactive_phx_new
