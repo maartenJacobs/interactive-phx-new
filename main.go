@@ -128,7 +128,11 @@ func main() {
 				Value(&adapter),
 		),
 	)
-	form.Run()
+
+	err := form.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	fmt.Println("Executing the following command...")
 	mixCommandArgs := buildCommand(projectName, features, database, adapter)
