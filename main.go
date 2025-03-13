@@ -148,10 +148,9 @@ func main() {
 	}
 
 	cmd := exec.Command(mixPath, mixCommandArgs...)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Printf("%s", out)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	if err := cmd.Run(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%s", out)
 }
