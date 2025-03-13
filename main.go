@@ -90,7 +90,48 @@ func buildCommand(
 	return append(append([]string{"phx.new"}, flags...), projectName)
 }
 
+func hasMixPhxNewInstalled() (bool, error) {
+	mixPath, err := exec.LookPath("mix")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cmd := exec.Command(mixPath, "phx.new")
+	if err := cmd.Run(); err != nil {
+		if exitError := err.(*exec.ExitError); exitError != nil {
+			if exitError.ExitCode() == 1 {
+				return false, nil
+			}
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
+func ensureMixPhxNewInstalled() error {
+	installed, err := hasMixPhxNewInstalled()
+	if err != nil {
+		return err
+	}
+
+	mixPath, err := exec.LookPath("mix")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if !installed {
+		fmt.Println("Phoenix not installed, running `mix archive.install phx_new`")
+		return exec.Command(mixPath, "archive.install", "--force", "hex", "phx_new").Run()
+	}
+	return nil
+}
+
 func main() {
+	if err := ensureMixPhxNewInstalled(); err != nil {
+		log.Fatal(err)
+	}
+
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
