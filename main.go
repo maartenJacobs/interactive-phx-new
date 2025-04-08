@@ -3,26 +3,23 @@ package main
 import (
 	"fmt"
 	"log"
+	"maps"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 
 	"github.com/charmbracelet/huh"
 )
 
-var (
-	projectName string
-	features    []string
-	database    string
-	adapter     string
-)
+type project struct {
+	name     string
+	features []string
+	database string
+	adapter  string
+}
 
-func buildCommand(
-	projectName string,
-	features []string,
-	database string,
-	adapter string,
-) []string {
+func (project *project) buildCommand() []string {
 	featuresMap := map[string]bool{
 		"Binary ID":      false,
 		"Ecto":           false,
@@ -34,19 +31,21 @@ func buildCommand(
 		"Live Dashboard": false,
 		"Swoosh Mailer":  false,
 	}
-	for i := 0; i < len(features); i += 1 {
-		featuresMap[features[i]] = true
+	for i := 0; i < len(project.features); i += 1 {
+		featuresMap[project.features[i]] = true
 	}
 
 	flags := []string{
 		"--install",
 		"--database",
-		database,
+		project.database,
 		"--adapter",
-		adapter,
+		project.adapter,
 	}
 
-	for feature, flag := range featuresMap {
+	sortedFeatures := slices.Sorted(maps.Keys(featuresMap))
+	for _, feature := range sortedFeatures {
+		flag := featuresMap[feature]
 		switch feature {
 		case "Binary ID":
 			if flag {
@@ -87,7 +86,7 @@ func buildCommand(
 		}
 	}
 
-	return append(append([]string{"phx.new"}, flags...), projectName)
+	return append(append([]string{"phx.new"}, flags...), project.name)
 }
 
 func hasMixPhxNewInstalled() (bool, error) {
@@ -132,12 +131,13 @@ func main() {
 		log.Fatal(err)
 	}
 
+	project := project{}
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
 				Title("What's the name of your project?").
 				Prompt("? ").
-				Value(&projectName),
+				Value(&project.name),
 			huh.NewMultiSelect[string]().
 				Options(
 					huh.NewOption("Binary ID", "Binary ID").Selected(true),
@@ -151,7 +151,7 @@ func main() {
 					huh.NewOption("Swoosh Mailer", "Swoosh Mailer").Selected(false),
 				).
 				Title("Include Features").
-				Value(&features),
+				Value(&project.features),
 			huh.NewSelect[string]().
 				Title("Pick a database.").
 				Options(
@@ -160,14 +160,14 @@ func main() {
 					huh.NewOption("MSSQL", "mssql"),
 					huh.NewOption("SQLite3", "sqlite3"),
 				).
-				Value(&database),
+				Value(&project.database),
 			huh.NewSelect[string]().
 				Title("Pick an adapter.").
 				Options(
 					huh.NewOption("Bandit", "bandit"),
 					huh.NewOption("Cowboy", "cowboy"),
 				).
-				Value(&adapter),
+				Value(&project.adapter),
 		),
 	)
 
@@ -180,7 +180,7 @@ func main() {
 	}
 
 	fmt.Println("Executing the following command...")
-	mixCommandArgs := buildCommand(projectName, features, database, adapter)
+	mixCommandArgs := project.buildCommand()
 	fmt.Printf("mix %s\n", strings.Join(mixCommandArgs, " "))
 
 	mixPath, err := exec.LookPath("mix")
